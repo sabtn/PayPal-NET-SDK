@@ -20,7 +20,7 @@ namespace PayPal.Identity
     {
         public UserinfoGetRequest() : base("/v1/identity/openidconnect/userinfo?", HttpMethod.Get, typeof(UserInfo))
         {
-            
+			this.ContentType = "application/x-www-form-urlencoded";
         }
 
         public UserinfoGetRequest Schema(string Schema)

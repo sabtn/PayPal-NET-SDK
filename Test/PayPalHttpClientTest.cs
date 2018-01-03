@@ -21,7 +21,7 @@ namespace PayPal
         public PayPalHttpClientTest()
         {
             server = FluentMockServer.Start();
-            environment = new PayPalEnvironment("clientid", "clientsecret", $"http://localhost:{server.Ports[0]}");
+            environment = new PayPalEnvironment("clientid", "clientsecret", $"http://localhost:{server.Ports[0]}", $"http://localhost:{server.Ports[0]}");
         }
 
         private PayPalHttpClient getClient(string refreshToken = null) 
@@ -127,6 +127,25 @@ namespace PayPal
         }
 
         [Fact]
+        public async void FetchRefreshTokenFromAuthorizationCode()
+        {
+            var client = getClient();
+
+            server.Given(refreshTokenRequest())
+                .RespondWith(refreshTokenReponse(refreshToken: "refresh-token"));
+            RefreshTokenRequest request = new RefreshTokenRequest(environment, "sample_authorization_code");
+
+            server.Given(builderForRequest(request))
+                .RespondWith(defaultResponse());
+
+            await client.Execute(request);
+
+            var refreshTokenRequestLog = getLogForRequest(refreshTokenRequest());
+            Assert.NotNull(refreshTokenRequestLog);
+            Assert.Equal("grant_type=authorization_code&code=sample_authorization_code", refreshTokenRequestLog.Body);   
+        }
+
+        [Fact]
         public async void Execute_UsesCorrectUserAgentHeader()
         {
             var client = getClient();
@@ -165,6 +184,11 @@ namespace PayPal
             return Request.Create().UsingPost().WithPath("/v1/oauth2/token");
         }
 
+        private IRequestBuilder refreshTokenRequest()
+        {
+            return Request.Create().UsingPost().WithPath("/v1/identity/openidconnect/tokenservice");
+        }
+
         private IResponseBuilder accessTokenReponse(string accessToken = "sample-access-token", int expiresIn = 3800)
         {
             var accessTokenJson = $@"{{
@@ -176,6 +200,21 @@ namespace PayPal
             return Response.Create()
                            .WithStatusCode(200)
                            .WithBody(accessTokenJson)
+                           .WithHeader("Content-Type", "application/json");
+        }
+
+        private IResponseBuilder refreshTokenReponse(string refreshToken = "sample-refresh-token", int expiresIn = 3800)
+        {
+            var refreshTokenJson = $@"{{
+                ""access_token"": ""sample-access-token"",
+                ""refresh_token"": ""{refreshToken}"",
+                ""token_type"": ""Bearer"",
+                ""expires_in"": {expiresIn}
+            }}";
+
+            return Response.Create()
+                           .WithStatusCode(200)
+                           .WithBody(refreshTokenJson)
                            .WithHeader("Content-Type", "application/json");
         }
 

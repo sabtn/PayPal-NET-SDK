@@ -18,8 +18,10 @@ namespace PayPal.Core
 
             if (refreshToken != null)
             {
+                body["grant_type"] = "refresh_token";
                 body.Add("refresh_token", refreshToken);
             }
+
             this.Body = body;
 
             this.ContentType = "application/x-www-form-urlencoded";

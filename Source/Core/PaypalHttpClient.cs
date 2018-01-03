@@ -69,7 +69,7 @@ namespace PayPal.Core
         {
             public void Inject(HttpRequest request)
             {
-                request.Headers.AcceptEncoding.Add(new StringWithQualityHeaderValue("gzip"));
+                request.Headers.AcceptEncoding.Add(new StringWithQualityHeaderValue("identity"));
             }
         }
     }
